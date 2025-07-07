@@ -1,14 +1,5 @@
-<?php if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
-class Mapos extends MY_Controller
-{
-    /**
-     * author: Ramon Silva
-     * email: silva018-mg@yahoo.com.br
-     *
-     */
-
+<?php if (!defined('BASEPATH')) { exit('No direct script access allowed'); }
+class Mapos extends MY_Controller {
     public function __construct()
     {
         parent::__construct();
@@ -17,8 +8,16 @@ class Mapos extends MY_Controller
 
     public function index()
     {
-        $this->data['ordens'] = $this->mapos_model->getOsAbertas();
-        $this->data['ordens1'] = $this->mapos_model->getOsAguardandoPecas();
+        $status = array('Em Andamento', 'Aguardando Peças');
+        $this->data['ordens_status'] = $this->mapos_model->getOsStatus($status);
+        $vstatus = array('Aberto', 'Em Andamento', 'Aguardando Peças', 'Aprovado', 'Orçamento');
+        $this->data['vendasstatus'] = $this->mapos_model->getVendasStatus($vstatus);
+        $this->data['lancamentos'] = $this->mapos_model->getLancamentos();
+        $this->data['ordens_orcamentos'] = $this->mapos_model->getOsOrcamentos();
+        $this->data['ordens_abertas'] = $this->mapos_model->getOsAbertas();
+        $this->data['ordens_aprovadas'] = $this->mapos_model->getOsAprovadas();
+        $this->data['ordens_finalizadas'] = $this->mapos_model->getOsFinalizadas();
+        $this->data['ordens_aguardando'] = $this->mapos_model->getOsAguardandoPecas();
         $this->data['ordens_andamento'] = $this->mapos_model->getOsAndamento();
         $this->data['produtos'] = $this->mapos_model->getProdutosMinimo();
         $this->data['os'] = $this->mapos_model->getOsEstatisticas();
@@ -28,6 +27,7 @@ class Mapos extends MY_Controller
         $this->data['financeiro_mesinadipl'] = $this->mapos_model->getEstatisticasFinanceiroMesInadimplencia($this->input->get('year'));
         $this->data['menuPainel'] = 'Painel';
         $this->data['view'] = 'mapos/painel';
+
         return $this->layout();
     }
 
@@ -35,6 +35,7 @@ class Mapos extends MY_Controller
     {
         $this->data['usuario'] = $this->mapos_model->getById($this->session->userdata('id_admin'));
         $this->data['view'] = 'mapos/minhaConta';
+
         return $this->layout();
     }
 
@@ -76,6 +77,7 @@ class Mapos extends MY_Controller
         $this->data['os'] = $data['results']['os'];
         $this->data['clientes'] = $data['results']['clientes'];
         $this->data['view'] = 'mapos/pesquisa';
+
         return $this->layout();
     }
 
@@ -114,6 +116,7 @@ class Mapos extends MY_Controller
         $this->data['menuConfiguracoes'] = 'Configuracoes';
         $this->data['dados'] = $this->mapos_model->getEmitente();
         $this->data['view'] = 'mapos/emitente';
+
         return $this->layout();
     }
 
@@ -148,6 +151,7 @@ class Mapos extends MY_Controller
             exit();
         } else {
             $file_info = [$this->upload->data()];
+
             return $file_info[0]['file_name'];
         }
     }
@@ -183,6 +187,7 @@ class Mapos extends MY_Controller
             exit();
         } else {
             $file_info = [$this->upload->data()];
+
             return $file_info[0]['file_name'];
         }
     }
@@ -197,7 +202,7 @@ class Mapos extends MY_Controller
         $this->load->library('form_validation');
         $this->form_validation->set_rules('nome', 'Razão Social', 'required|trim');
         $this->form_validation->set_rules('cnpj', 'CNPJ', 'required|trim');
-        $this->form_validation->set_rules('ie', 'IE', 'required|trim');
+        $this->form_validation->set_rules('ie', 'IE', 'trim');
         $this->form_validation->set_rules('cep', 'CEP', 'required|trim');
         $this->form_validation->set_rules('logradouro', 'Logradouro', 'required|trim');
         $this->form_validation->set_rules('numero', 'Número', 'required|trim');
@@ -246,7 +251,7 @@ class Mapos extends MY_Controller
         $this->load->library('form_validation');
         $this->form_validation->set_rules('nome', 'Razão Social', 'required|trim');
         $this->form_validation->set_rules('cnpj', 'CNPJ', 'required|trim');
-        $this->form_validation->set_rules('ie', 'IE', 'required|trim');
+        $this->form_validation->set_rules('ie', 'IE', 'trim');
         $this->form_validation->set_rules('cep', 'CEP', 'required|trim');
         $this->form_validation->set_rules('logradouro', 'Logradouro', 'required|trim');
         $this->form_validation->set_rules('numero', 'Número', 'required|trim');
@@ -365,6 +370,7 @@ class Mapos extends MY_Controller
         $this->data['results'] = $this->email_model->get('email_queue', '*', '', $this->data['configuration']['per_page'], $this->uri->segment(3));
 
         $this->data['view'] = 'emails/emails';
+
         return $this->layout();
     }
 
@@ -423,6 +429,38 @@ class Mapos extends MY_Controller
         if ($this->form_validation->run() == false) {
             $this->data['custom_error'] = (validation_errors() ? '<div class="alert">' . validation_errors() . '</div>' : false);
         } else {
+            // Edição do .env
+            $dataDotEnv = [
+                'IMPRIMIR_ANEXOS' => $this->input->post('imprmirAnexos'),
+                'PAYMENT_GATEWAYS_EFI_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_EFI_PRODUCTION'),
+                'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID'),
+                'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET'),
+                'PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION'),
+                'PAYMENT_GATEWAYS_ASAAS_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_PRODUCTION'),
+                'PAYMENT_GATEWAYS_ASAAS_NOTIFY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_NOTIFY'),
+                'PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY'),
+                'PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION'),
+                'API_ENABLED' => $this->input->post('apiEnabled'),
+                'API_TOKEN_EXPIRE_TIME' => $this->input->post('apiExpireTime'),
+                'API_JWT_KEY' => $this->input->post('resetJwtToken'),
+                'EMAIL_PROTOCOL' => $this->input->post('EMAIL_PROTOCOL'),
+                'EMAIL_SMTP_HOST' => $this->input->post('EMAIL_SMTP_HOST'),
+                'EMAIL_SMTP_CRYPTO' => $this->input->post('EMAIL_SMTP_CRYPTO'),
+                'EMAIL_SMTP_PORT' => $this->input->post('EMAIL_SMTP_PORT'),
+                'EMAIL_SMTP_USER' => $this->input->post('EMAIL_SMTP_USER'),
+                'EMAIL_SMTP_PASS' => $this->input->post('EMAIL_SMTP_PASS'),
+            ];
+
+            if (!$this->editDontEnv($dataDotEnv)) {
+                $this->data['custom_error'] = '<div class="alert">Falha ao editar o .env</div>';
+            }
+            // FIM Edição do .env
+
             $data = [
                 'app_name' => $this->input->post('app_name'),
                 'per_page' => $this->input->post('per_page'),
@@ -538,10 +576,14 @@ class Mapos extends MY_Controller
                 case 'Aguardando Peças':
                     $cor = '#FF7F00';
                     break;
+                case 'Aprovado':
+                    $cor = '#808080';
+                    break;
                 default:
                     $cor = '#E0E4CC';
                     break;
             }
+
             return [
                 'title' => "OS: {$os->idOs}, Cliente: {$os->nomeCliente}",
                 'start' => $os->dataFinal,
@@ -557,11 +599,12 @@ class Mapos extends MY_Controller
                     'description' => '<b>Descrição/Produto:</b> ' . strip_tags(html_entity_decode($os->descricaoProduto)),
                     'defeito' => '<b>Defeito:</b> ' . strip_tags(html_entity_decode($os->defeito)),
                     'observacoes' => '<b>Observações:</b> ' . strip_tags(html_entity_decode($os->observacoes)),
-                    'total' => '<b>Valor Total:</b> R$ ' . number_format($os->totalProdutos + $os->totalServicos, 2, ',', '.'),
-                    'desconto' => '<b>Desconto: </b>R$ ' . number_format($this->desconto(floatval($os->valorTotal), floatval($os->desconto), strval($os->tipo_desconto)), 2, ',', '.'),
-                    'valorFaturado' => '<b>Valor Faturado:</b> ' . ($os->faturado ? 'R$ '. number_format($os->valorTotal - $this->desconto(floatval($os->valorTotal), floatval($os->desconto), strval($os->tipo_desconto)), 2, ',', '.') : "PENDENTE"),
+                    'subtotal' => '<br><b>Subtotal:</b> R$ ' . number_format($os->totalProdutos + $os->totalServicos, 2, ',', '.'),
+                    'desconto' => '<b>Desconto:</b> -R$ ' . ($os->desconto > 0 ? number_format(($os->totalProdutos + $os->totalServicos) - $os->valor_desconto, 2, ',', '.') : number_format($os->desconto, 2, ',', '.')),
+                    'total' => '<b>Total:</b> R$ ' . ($os->valor_desconto == 0 ? number_format($os->totalProdutos + $os->totalServicos, 2, ',', '.') : number_format($os->valor_desconto, 2, ',', '.')),
+                    'faturado' => '<br><b>Faturado:</b> ' . ($os->faturado ? 'SIM' : 'PENDENTE'),
                     'editar' => $this->os_model->isEditable($os->idOs),
-                ]
+                ],
             ];
         }, $allOs);
 
@@ -571,13 +614,25 @@ class Mapos extends MY_Controller
             ->set_output(json_encode($events));
     }
 
-    private function desconto(
-        float $valorTotal,
-        float $desconto,
-        string $tipoDesconto
-    ) {
-        return $tipoDesconto === 'porcento'
-            ? $valorTotal * ($desconto / 100)
-            : $desconto;
+    private function editDontEnv(array $data)
+    {
+        $env_file_path = dirname(__FILE__, 2) . DIRECTORY_SEPARATOR . '.env';
+        $env_file = file_get_contents($env_file_path);
+
+        foreach ($data as $constante => $valor) {
+            if ($constante == 'API_JWT_KEY' && $valor == 'sim') {
+                $base64 = base64_encode(openssl_random_pseudo_bytes(32));
+                $valor = '"' . $base64 . '"';
+                $env_file = str_replace("$constante=" . '"' . $_ENV[$constante] . '"', "$constante={$valor}", $env_file);
+            } else {
+                if (isset($_ENV[$constante])) {
+                    $env_file = str_replace("$constante={$_ENV[$constante]}", "$constante={$valor}", $env_file);
+                } else {
+                    file_put_contents($env_file_path, $env_file . "\n{$constante}={$valor}\n");
+                    $env_file = file_get_contents($env_file_path);
+                }
+            }
+        }
+        return file_put_contents($env_file_path, $env_file) ? true : false;
     }
 }

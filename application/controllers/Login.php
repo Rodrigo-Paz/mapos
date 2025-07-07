@@ -16,6 +16,7 @@ class Login extends CI_Controller
     public function sair()
     {
         $this->session->sess_destroy();
+
         return redirect($_SERVER['HTTP_REFERER']);
     }
 
@@ -43,7 +44,7 @@ class Login extends CI_Controller
                 if ($this->chk_date($user->dataExpiracao)) {
                     $json = ['result' => false, 'message' => 'A conta do usuário está expirada, por favor entre em contato com o administrador do sistema.'];
                     echo json_encode($json);
-                    die();
+                    exit();
                 }
 
                 // Verificar credenciais do usuário
@@ -54,21 +55,21 @@ class Login extends CI_Controller
                     $json = ['result' => true];
                     echo json_encode($json);
                 } else {
-                    $json = ['result' => false, 'message' => 'Os dados de acesso estão incorretos.'];
+                    $json = ['result' => false, 'message' => 'Os dados de acesso estão incorretos.', 'MAPOS_TOKEN' => $this->security->get_csrf_hash()];
                     echo json_encode($json);
                 }
             } else {
-                $json = ['result' => false, 'message' => 'Usuário não encontrado, verifique se suas credenciais estão corretass.'];
+                $json = ['result' => false, 'message' => 'Usuário não encontrado, verifique se suas credenciais estão corretass.', 'MAPOS_TOKEN' => $this->security->get_csrf_hash()];
                 echo json_encode($json);
             }
         }
-        die();
+        exit();
     }
 
     private function chk_date($data_banco)
     {
         $data_banco = new DateTime($data_banco);
-        $data_hoje = new DateTime("now");
+        $data_hoje = new DateTime('now');
 
         return $data_banco < $data_hoje;
     }

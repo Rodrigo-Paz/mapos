@@ -200,8 +200,7 @@ foreach ($servicos as $s) {
                                 } ?>
 
                                 <div class="span12" id="divAnexos" style="margin-left: 0">
-                                    <?php
-                                    foreach ($anexos as $a) {
+                                    <?php foreach ($anexos as $a) {
                                         if ($a->thumb == null) {
                                             $thumb = base_url() . 'assets/img/icon-file.png';
                                             $link = base_url() . 'assets/img/icon-file.png';
@@ -210,13 +209,12 @@ foreach ($servicos as $s) {
                                             $link = $a->url . '/' . $a->anexo;
                                         }
                                         echo '<div class="span3" style="min-height: 150px; margin-left: 0">
-                                                    <a style="min-height: 150px;" href="#modal-anexo" imagem="' . $a->idAnexos . '" link="' . $link . '" role="button" class="btn anexo span12" data-toggle="modal">
-                                                        <img src="' . $thumb . '" alt="">
-                                                    </a>
-                                                    <span>' . $a->anexo . '</span>
-                                                </div>';
-                                    }
-?>
+                                            <a style="min-height: 150px;" href="#modal-anexo" imagem="' . $a->idAnexos . '" link="' . $link . '" role="button" class="btn anexo span12" data-toggle="modal">
+                                            <img src="' . $thumb . '" alt="">
+                                            </a>
+                                            <span>' . $a->anexo . '</span>
+                                            </div>';
+                                    }?>
                                 </div>
 
                             </div>
@@ -340,7 +338,8 @@ foreach ($servicos as $s) {
 <script type="text/javascript">
     $(document).ready(function() {
         $('.editor').trumbowyg({
-            lang: 'pt_br'
+            lang: 'pt_br',
+            semantic: { 'strikethrough': 's', }
         });
     });
 

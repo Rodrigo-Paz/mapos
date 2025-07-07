@@ -14,6 +14,7 @@
             <div class="widget-content nopadding tab-content">
 
                 <form action="<?php echo current_url(); ?>" id="formCliente" method="post" class="form-horizontal">
+                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                     <div class="control-group">
                         <input type="hidden" name="idClientes" id="idClientes" value="<?php echo $result->idClientes; ?>" />
                         <label for="nomeCliente" class="control-label">Nome<span class="required">*</span></label>
@@ -21,6 +22,14 @@
                             <input id="nomeCliente" type="text" name="nomeCliente" value="<?php echo $result->nomeCliente; ?>" />
                         </div>
                     </div>
+
+                    <div class="control-group">
+                        <label for="contato" class="control-label">Contato</label>
+                        <div class="controls">
+                            <input id="contato" type="text" name="contato" value="<?php echo $result->contato; ?>" />
+                        </div>
+                    </div>
+
                     <div class="control-group">
                         <?php if ($custom_error != '') {
                             echo '<div class="alert alert-danger">' . $custom_error . '</div>';

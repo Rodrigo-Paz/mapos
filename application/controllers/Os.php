@@ -1,15 +1,11 @@
-<?php if (!defined('BASEPATH')) {
+<?php
+
+if (! defined('BASEPATH')) {
     exit('No direct script access allowed');
 }
 
 class Os extends MY_Controller
 {
-    /**
-     * author: Ramon Silva
-     * email: silva018-mg@yahoo.com.br
-     *
-     */
-
     public function __construct()
     {
         parent::__construct();
@@ -32,8 +28,8 @@ class Os extends MY_Controller
 
         $pesquisa = $this->input->get('pesquisa');
         $status = $this->input->get('status');
-        $de = $this->input->get('data');
-        $ate = $this->input->get('data2');
+        $inputDe = $this->input->get('data');
+        $inputAte = $this->input->get('data2');
 
         if ($pesquisa) {
             $where_array['pesquisa'] = $pesquisa;
@@ -41,14 +37,14 @@ class Os extends MY_Controller
         if ($status) {
             $where_array['status'] = $status;
         }
-        if ($de) {
-            $de = explode('/', $de);
+        if ($inputDe) {
+            $de = explode('/', $inputDe);
             $de = $de[2] . '-' . $de[1] . '-' . $de[0];
 
             $where_array['de'] = $de;
         }
-        if ($ate) {
-            $ate = explode('/', $ate);
+        if ($inputAte) {
+            $ate = explode('/', $inputAte);
             $ate = $ate[2] . '-' . $ate[1] . '-' . $ate[0];
 
             $where_array['ate'] = $ate;
@@ -56,6 +52,10 @@ class Os extends MY_Controller
 
         $this->data['configuration']['base_url'] = site_url('os/gerenciar/');
         $this->data['configuration']['total_rows'] = $this->os_model->count('os');
+        if(count($where_array) > 0) {
+            $this->data['configuration']['suffix'] = "?pesquisa={$pesquisa}&status={$status}&data={$inputDe}&data2={$inputAte}";
+            $this->data['configuration']['first_url'] = base_url("index.php/os/gerenciar")."\?pesquisa={$pesquisa}&status={$status}&data={$inputDe}&data2={$inputAte}";
+        }
 
         $this->pagination->initialize($this->data['configuration']);
 
@@ -72,12 +72,13 @@ class Os extends MY_Controller
         $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
         $this->data['emitente'] = $this->mapos_model->getEmitente();
         $this->data['view'] = 'os/os';
+
         return $this->layout();
     }
 
     public function adicionar()
     {
-        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'aOs')) {
+        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'aOs')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para adicionar O.S.');
             redirect(base_url());
         }
@@ -103,7 +104,7 @@ class Os extends MY_Controller
                     $dataFinal = date('Y/m/d');
                 }
 
-                $termoGarantiaId = (!$termoGarantiaId == null || !$termoGarantiaId == '')
+                $termoGarantiaId = (! $termoGarantiaId == null || ! $termoGarantiaId == '')
                     ? $this->input->post('garantias_id')
                     : null;
             } catch (Exception $e) {
@@ -118,11 +119,11 @@ class Os extends MY_Controller
                 'dataFinal' => $dataFinal,
                 'garantia' => set_value('garantia'),
                 'garantias_id' => $termoGarantiaId,
-                'descricaoProduto' => set_value('descricaoProduto'),
-                'defeito' => set_value('defeito'),
+                'descricaoProduto' => $this->input->post('descricaoProduto'),
+                'defeito' => $this->input->post('defeito'),
                 'status' => set_value('status'),
-                'observacoes' => set_value('observacoes'),
-                'laudoTecnico' => set_value('laudoTecnico'),
+                'observacoes' => $this->input->post('observacoes'),
+                'laudoTecnico' => $this->input->post('laudoTecnico'),
                 'faturado' => 0,
             ];
 
@@ -133,7 +134,7 @@ class Os extends MY_Controller
                 $idOs = $id;
                 $os = $this->os_model->getById($idOs);
                 $emitente = $this->mapos_model->getEmitente();
-              
+
                 $tecnico = $this->usuarios_model->getById($os->usuarios_id);
 
                 // Verificar configuração de notificação
@@ -170,17 +171,18 @@ class Os extends MY_Controller
         }
 
         $this->data['view'] = 'os/adicionarOs';
+
         return $this->layout();
     }
 
     public function editar()
     {
-        if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
+        if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
             $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
             redirect('mapos');
         }
 
-        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
+        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para editar O.S.');
             redirect(base_url());
         }
@@ -190,7 +192,7 @@ class Os extends MY_Controller
         $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
 
         $this->data['editavel'] = $this->os_model->isEditable($this->input->post('idOs'));
-        if (!$this->data['editavel']) {
+        if (! $this->data['editavel']) {
             $this->session->set_flashdata('error', 'Esta OS já e seu status não pode ser alterado e nem suas informações atualizadas. Por favor abrir uma nova OS.');
 
             redirect(site_url('os'));
@@ -230,11 +232,11 @@ class Os extends MY_Controller
 
             //Verifica para poder fazer a devolução do produto para o estoque caso OS seja cancelada.
 
-            if (strtolower($this->input->post('status')) == "cancelado" && strtolower($os->status) != "cancelado") {
+            if (strtolower($this->input->post('status')) == 'cancelado' && strtolower($os->status) != 'cancelado') {
                 $this->devolucaoEstoque($this->input->post('idOs'));
             }
 
-            if (strtolower($os->status) == "cancelado" && strtolower($this->input->post('status')) != "cancelado") {
+            if (strtolower($os->status) == 'cancelado' && strtolower($this->input->post('status')) != 'cancelado') {
                 $this->debitarEstoque($this->input->post('idOs'));
             }
 
@@ -297,17 +299,18 @@ class Os extends MY_Controller
         $this->data['emitente'] = $this->mapos_model->getEmitente();
 
         $this->data['view'] = 'os/editarOs';
+
         return $this->layout();
     }
 
     public function visualizar()
     {
-        if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
+        if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
             $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
             redirect('mapos');
         }
 
-        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
+        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para visualizar O.S.');
             redirect(base_url());
         }
@@ -337,6 +340,7 @@ class Os extends MY_Controller
             true
         );
         $this->data['view'] = 'os/visualizarOs';
+        $this->data['chaveFormatada'] = $this->formatarChave($this->data['configuration']['pix_key']);
 
         if ($return = $this->os_model->valorTotalOS($this->uri->segment(3))) {
             $this->data['totalServico'] = $return['totalServico'];
@@ -346,14 +350,110 @@ class Os extends MY_Controller
         return $this->layout();
     }
 
+    public function validarCPF($cpf)
+    {
+        $cpf = preg_replace('/[^0-9]/', '', $cpf);
+        if (strlen($cpf) !== 11 || preg_match('/^(\d)\1+$/', $cpf)) {
+            return false;
+        }
+        $soma1 = 0;
+        for ($i = 0; $i < 9; $i++) {
+            $soma1 += $cpf[$i] * (10 - $i);
+        }
+        $resto1 = $soma1 % 11;
+        $dv1 = ($resto1 < 2) ? 0 : 11 - $resto1;
+        if ($dv1 != $cpf[9]) {
+            return false;
+        }
+        $soma2 = 0;
+        for ($i = 0; $i < 10; $i++) {
+            $soma2 += $cpf[$i] * (11 - $i);
+        }
+        $resto2 = $soma2 % 11;
+        $dv2 = ($resto2 < 2) ? 0 : 11 - $resto2;
+
+        return $dv2 == $cpf[10];
+    }
+
+    public function validarCNPJ($cnpj)
+    {
+        $cnpj = preg_replace('/[^0-9]/', '', $cnpj);
+        if (strlen($cnpj) !== 14 || preg_match('/^(\d)\1+$/', $cnpj)) {
+            return false;
+        }
+        $soma1 = 0;
+        for ($i = 0, $pos = 5; $i < 12; $i++, $pos--) {
+            $pos = ($pos < 2) ? 9 : $pos;
+            $soma1 += $cnpj[$i] * $pos;
+        }
+        $dv1 = ($soma1 % 11 < 2) ? 0 : 11 - ($soma1 % 11);
+        if ($dv1 != $cnpj[12]) {
+            return false;
+        }
+        $soma2 = 0;
+        for ($i = 0, $pos = 6; $i < 13; $i++, $pos--) {
+            $pos = ($pos < 2) ? 9 : $pos;
+            $soma2 += $cnpj[$i] * $pos;
+        }
+        $dv2 = ($soma2 % 11 < 2) ? 0 : 11 - ($soma2 % 11);
+
+        return $dv2 == $cnpj[13];
+    }
+
+    public function formatarChave($chave)
+    {
+        if ($this->validarCPF($chave)) {
+            return substr($chave, 0, 3) . '.' . substr($chave, 3, 3) . '.' . substr($chave, 6, 3) . '-' . substr($chave, 9);
+        } elseif ($this->validarCNPJ($chave)) {
+            return substr($chave, 0, 2) . '.' . substr($chave, 2, 3) . '.' . substr($chave, 5, 3) . '/' . substr($chave, 8, 4) . '-' . substr($chave, 12);
+        } elseif (strlen($chave) === 11) {
+            return '(' . substr($chave, 0, 2) . ') ' . substr($chave, 2, 5) . '-' . substr($chave, 7);
+        }
+
+        return $chave;
+    }
+
     public function imprimir()
     {
-        if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
+        if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
             $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
             redirect('mapos');
         }
 
-        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
+        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
+            $this->session->set_flashdata('error', 'Você não tem permissão para visualizar O.S.');
+            redirect(base_url());
+        }
+
+        $this->data['custom_error'] = '';
+        $this->load->model('mapos_model');
+        $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
+        $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
+        $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
+        $this->data['anexos'] = $this->os_model->getAnexos($this->uri->segment(3));
+        $this->data['emitente'] = $this->mapos_model->getEmitente();
+        if ($this->data['configuration']['pix_key']) {
+            $this->data['qrCode'] = $this->os_model->getQrCode(
+                $this->uri->segment(3),
+                $this->data['configuration']['pix_key'],
+                $this->data['emitente']
+            );
+            $this->data['chaveFormatada'] = $this->formatarChave($this->data['configuration']['pix_key']);
+        }
+        
+        $this->data['imprimirAnexo'] = isset($_ENV['IMPRIMIR_ANEXOS']) ? (filter_var($_ENV['IMPRIMIR_ANEXOS'] ?? false, FILTER_VALIDATE_BOOLEAN)) : false;
+
+        $this->load->view('os/imprimirOs', $this->data);
+    }
+
+    public function imprimirTermica()
+    {
+        if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
+            $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
+            redirect('mapos');
+        }
+
+        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para visualizar O.S.');
             redirect(base_url());
         }
@@ -369,40 +469,19 @@ class Os extends MY_Controller
             $this->data['configuration']['pix_key'],
             $this->data['emitente']
         );
-
-        $this->load->view('os/imprimirOs', $this->data);
-    }
-
-    public function imprimirTermica()
-    {
-        if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
-            $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
-            redirect('mapos');
-        }
-
-        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para visualizar O.S.');
-            redirect(base_url());
-        }
-
-        $this->data['custom_error'] = '';
-        $this->load->model('mapos_model');
-        $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
-        $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
-        $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
-        $this->data['emitente'] = $this->mapos_model->getEmitente();
+        $this->data['chaveFormatada'] = $this->formatarChave($this->data['configuration']['pix_key']);
 
         $this->load->view('os/imprimirOsTermica', $this->data);
     }
 
     public function enviar_email()
     {
-        if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
+        if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
             $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
             redirect('mapos');
         }
 
-        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
+        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para enviar O.S. por e-mail.');
             redirect(base_url());
         }
@@ -410,7 +489,7 @@ class Os extends MY_Controller
         $this->load->model('mapos_model');
         $this->load->model('usuarios_model');
         $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
-        if (!isset($this->data['result']->email)) {
+        if (! isset($this->data['result']->email)) {
             $this->session->set_flashdata('error', 'O cliente não tem e-mail cadastrado.');
             redirect(site_url('os'));
         }
@@ -419,7 +498,7 @@ class Os extends MY_Controller
         $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
         $this->data['emitente'] = $this->mapos_model->getEmitente();
 
-        if (!isset($this->data['emitente']->email)) {
+        if (! isset($this->data['emitente']->email)) {
             $this->session->set_flashdata('error', 'Efetue o cadastro dos dados de emitente');
             redirect(site_url('os'));
         }
@@ -457,7 +536,7 @@ class Os extends MY_Controller
             }
 
             if ($ValidarEmail) {
-                if (empty($this->data['result']->email) || !filter_var($this->data['result']->email, FILTER_VALIDATE_EMAIL)) {
+                if (empty($this->data['result']->email) || ! filter_var($this->data['result']->email, FILTER_VALIDATE_EMAIL)) {
                     $this->session->set_flashdata('error', 'Por favor preencha o email do cliente');
                     redirect(site_url('os/visualizar/') . $this->uri->segment(3));
                 }
@@ -507,7 +586,7 @@ class Os extends MY_Controller
 
     public function excluir()
     {
-        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'dOs')) {
+        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'dOs')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para excluir O.S.');
             redirect(base_url());
         }
@@ -523,7 +602,7 @@ class Os extends MY_Controller
         }
 
         if (isset($os->idCobranca) != null) {
-            if ($os->status == "canceled") {
+            if ($os->status == 'canceled') {
                 $this->os_model->delete('cobrancas', 'os_id', $id);
             } else {
                 $this->session->set_flashdata('error', 'Existe uma cobrança associada a esta OS, deve cancelar e/ou excluir a cobrança primeiro!');
@@ -533,7 +612,7 @@ class Os extends MY_Controller
 
         $osStockRefund = $this->os_model->getById($id);
         //Verifica para poder fazer a devolução do produto para o estoque caso OS seja excluida.
-        if (strtolower($osStockRefund->status) != "cancelado") {
+        if (strtolower($osStockRefund->status) != 'cancelado') {
             $this->devolucaoEstoque($id);
         }
 
@@ -541,7 +620,7 @@ class Os extends MY_Controller
         $this->os_model->delete('produtos_os', 'os_id', $id);
         $this->os_model->delete('anexos', 'os_id', $id);
         $this->os_model->delete('os', 'idOs', $id);
-        if ((int)$os->faturado === 1) {
+        if ((int) $os->faturado === 1) {
             $this->os_model->delete('lancamentos', 'descricao', "Fatura de OS - #${id}");
         }
 
@@ -760,13 +839,13 @@ class Os extends MY_Controller
         $directory = FCPATH . 'assets' . DIRECTORY_SEPARATOR . 'anexos' . DIRECTORY_SEPARATOR . date('m-Y') . DIRECTORY_SEPARATOR . 'OS-' . $this->input->post('idOsServico');
 
         // If it exist, check if it's a directory
-        if (!is_dir($directory . DIRECTORY_SEPARATOR . 'thumbs')) {
+        if (! is_dir($directory . DIRECTORY_SEPARATOR . 'thumbs')) {
             // make directory for images and thumbs
             try {
                 mkdir($directory . DIRECTORY_SEPARATOR . 'thumbs', 0755, true);
             } catch (Exception $e) {
                 echo json_encode(['result' => false, 'mensagem' => $e->getMessage()]);
-                die();
+                exit();
             }
         }
 
@@ -781,7 +860,7 @@ class Os extends MY_Controller
         foreach ($_FILES['userfile'] as $key => $val) {
             $i = 1;
             foreach ($val as $v) {
-                $field_name = "file_" . $i;
+                $field_name = 'file_' . $i;
                 $_FILES[$field_name][$key] = $v;
                 $i++;
             }
@@ -792,17 +871,17 @@ class Os extends MY_Controller
         $success = [];
 
         foreach ($_FILES as $field_name => $file) {
-            if (!$this->upload->do_upload($field_name)) {
+            if (! $this->upload->do_upload($field_name)) {
                 $error['upload'][] = $this->upload->display_errors();
             } else {
                 $upload_data = $this->upload->data();
-        
+
                 // Gera um nome de arquivo aleatório mantendo a extensão original
                 $new_file_name = uniqid() . '.' . pathinfo($upload_data['file_name'], PATHINFO_EXTENSION);
                 $new_file_path = $upload_data['file_path'] . $new_file_name;
-        
+
                 rename($upload_data['full_path'], $new_file_path);
-        
+
                 if ($upload_data['is_image'] == 1) {
                     $resize_conf = [
                         'source_image' => $new_file_path,
@@ -810,32 +889,32 @@ class Os extends MY_Controller
                         'width' => 200,
                         'height' => 125,
                     ];
-        
+
                     $this->image_lib->initialize($resize_conf);
-        
-                    if (!$this->image_lib->resize()) {
+
+                    if (! $this->image_lib->resize()) {
                         $error['resize'][] = $this->image_lib->display_errors();
                     } else {
                         $success[] = $upload_data;
                         $this->load->model('Os_model');
                         $result = $this->Os_model->anexar($this->input->post('idOsServico'), $new_file_name, base_url('assets' . DIRECTORY_SEPARATOR . 'anexos' . DIRECTORY_SEPARATOR . date('m-Y') . DIRECTORY_SEPARATOR . 'OS-' . $this->input->post('idOsServico')), 'thumb_' . $new_file_name, $directory);
-                        if (!$result) {
+                        if (! $result) {
                             $error['db'][] = 'Erro ao inserir no banco de dados.';
                         }
                     }
                 } else {
                     $success[] = $upload_data;
-        
+
                     $this->load->model('Os_model');
-        
+
                     $result = $this->Os_model->anexar($this->input->post('idOsServico'), $new_file_name, base_url('assets' . DIRECTORY_SEPARATOR . 'anexos' . DIRECTORY_SEPARATOR . date('m-Y') . DIRECTORY_SEPARATOR . 'OS-' . $this->input->post('idOsServico')), '', $directory);
-                    if (!$result) {
+                    if (! $result) {
                         $error['db'][] = 'Erro ao inserir no banco de dados.';
                     }
                 }
             }
         }
-        
+
         if (count($error) > 0) {
             echo json_encode(['result' => false, 'mensagem' => 'Ocorreu um erro ao processar os arquivos.', 'errors' => $error]);
         } else {
@@ -846,7 +925,7 @@ class Os extends MY_Controller
 
     public function excluirAnexo($id = null)
     {
-        if ($id == null || !is_numeric($id)) {
+        if ($id == null || ! is_numeric($id)) {
             echo json_encode(['result' => false, 'mensagem' => 'Erro ao tentar excluir anexo.']);
         } else {
             $this->db->where('idAnexos', $id);
@@ -883,7 +962,7 @@ class Os extends MY_Controller
 
     public function adicionarDesconto()
     {
-        if ($this->input->post('desconto') == "") {
+        if ($this->input->post('desconto') == '') {
             return $this->output
                 ->set_content_type('application/json')
                 ->set_status_header(400)
@@ -893,10 +972,10 @@ class Os extends MY_Controller
             $data = [
                 'tipo_desconto' => $this->input->post('tipoDesconto'),
                 'desconto' => $this->input->post('desconto'),
-                'valor_desconto' => $this->input->post('resultado')
+                'valor_desconto' => $this->input->post('resultado'),
             ];
             $editavel = $this->os_model->isEditable($idOs);
-            if (!$editavel) {
+            if (! $editavel) {
                 return $this->output
                     ->set_content_type('application/json')
                     ->set_status_header(400)
@@ -904,18 +983,21 @@ class Os extends MY_Controller
             }
             if ($this->os_model->edit('os', $data, 'idOs', $idOs) == true) {
                 log_info('Adicionou um desconto na OS. ID: ' . $idOs);
+
                 return $this->output
                     ->set_content_type('application/json')
                     ->set_status_header(201)
                     ->set_output(json_encode(['result' => true, 'messages' => 'Desconto adicionado com sucesso!']));
             } else {
                 log_info('Ocorreu um erro ao tentar adiciona desconto a OS: ' . $idOs);
+
                 return $this->output
                     ->set_content_type('application/json')
                     ->set_status_header(400)
                     ->set_output(json_encode(['result' => false, 'messages', 'Ocorreu um erro ao tentar adiciona desconto a OS.']));
             }
         }
+
         return $this->output
             ->set_content_type('application/json')
             ->set_status_header(400)
@@ -934,23 +1016,30 @@ class Os extends MY_Controller
             $recebimento = $this->input->post('recebimento');
 
             try {
-                $vencimento = explode('/', $vencimento);
-                $vencimento = $vencimento[2] . '-' . $vencimento[1] . '-' . $vencimento[0];
-
+                $vencimento = DateTime::createFromFormat('d/m/Y', $vencimento)->format('Y-m-d');
                 if ($recebimento != null) {
-                    $recebimento = explode('/', $recebimento);
-                    $recebimento = $recebimento[2] . '-' . $recebimento[1] . '-' . $recebimento[0];
+                    $recebimento = DateTime::createFromFormat('d/m/Y', $recebimento)->format('Y-m-d');
                 }
             } catch (Exception $e) {
-                $vencimento = date('Y/m/d');
+                $vencimento = date('Y-m-d');
             }
-            $os = $this->os_model->getById($this->input->post('os_id'));
+
+            $os_id = $this->input->post('os_id');
+            $valorTotalData = $this->os_model->valorTotalOS($os_id);
+
+            $valorTotalServico = $valorTotalData['totalServico'];
+            $valorTotalProduto = $valorTotalData['totalProdutos'];
+            $valorDesconto = $valorTotalData['valor_desconto'];
+
+            $valorTotal = $valorTotalServico + $valorTotalProduto;
+            $valorTotalComDesconto = $valorTotal - $valorDesconto;
+
             $data = [
                 'descricao' => set_value('descricao'),
-                'valor' => getAmount($this->input->post('valor')),
-                'tipo_desconto' => ($this->input->post('tipoDesconto')),
-                'desconto' => $os->desconto,
-                'valor_desconto' => $os->valor_desconto,
+                'valor' => $valorTotal,
+                'tipo_desconto' => 'real',
+                'desconto' => ($valorDesconto > 0) ? $valorTotalComDesconto : 0,
+                'valor_desconto' => ($valorDesconto > 0) ? $valorDesconto : $valorTotal,
                 'clientes_id' => $this->input->post('clientes_id'),
                 'data_vencimento' => $vencimento,
                 'data_pagamento' => $recebimento,
@@ -962,35 +1051,52 @@ class Os extends MY_Controller
                 'usuarios_id' => $this->session->userdata('id_admin'),
             ];
 
-            $editavel = $this->os_model->isEditable($this->input->post('idOs'));
+            $this->db->trans_start();
+
+            $editavel = $this->os_model->isEditable($os_id);
             if (!$editavel) {
+                $this->db->trans_rollback();
                 return $this->output
                     ->set_content_type('application/json')
                     ->set_status_header(400)
                     ->set_output(json_encode(['result' => false]));
             }
 
-            if ($this->os_model->add('lancamentos', $data) == true) {
-                $os = $this->input->post('os_id');
-
+            if ($this->os_model->add('lancamentos', $data)) {
                 $this->db->set('faturado', 1);
-                $this->db->set('valorTotal', $this->input->post('valor'));
+                $this->db->set('valorTotal', $valorTotal);
+
+                if ($valorDesconto > 0) {
+                    $this->db->set('desconto', $valorTotalComDesconto);
+                    $this->db->set('valor_desconto', $valorDesconto);
+                } else {
+                    $this->db->set('desconto', 0);
+                    $this->db->set('valor_desconto', $valorTotal);
+                }
+
                 $this->db->set('status', 'Faturado');
-                $this->db->where('idOs', $os);
+                $this->db->where('idOs', $os_id);
                 $this->db->update('os');
 
-                log_info('Faturou uma OS. ID: ' . $os);
+                log_info('Faturou uma OS. ID: ' . $os_id);
 
-                $this->session->set_flashdata('success', 'OS faturada com sucesso!');
-                $json = ['result' => true];
-                echo json_encode($json);
-                die();
+                $this->db->trans_complete();
+
+                if ($this->db->trans_status() === FALSE) {
+                    $this->session->set_flashdata('error', 'Ocorreu um erro ao tentar faturar OS.');
+                    $json = ['result' => false];
+                } else {
+                    $this->session->set_flashdata('success', 'OS faturada com sucesso!');
+                    $json = ['result' => true];
+                }
             } else {
+                $this->db->trans_rollback();
                 $this->session->set_flashdata('error', 'Ocorreu um erro ao tentar faturar OS.');
                 $json = ['result' => false];
-                echo json_encode($json);
-                die();
             }
+
+            echo json_encode($json);
+            exit();
         }
 
         $this->session->set_flashdata('error', 'Ocorreu um erro ao tentar faturar OS.');
@@ -1004,7 +1110,7 @@ class Os extends MY_Controller
 
         $this->load->model('mapos_model');
         $dados['result'] = $this->os_model->getById($idOs);
-        if (!isset($dados['result']->email)) {
+        if (! isset($dados['result']->email)) {
             return false;
         }
 
@@ -1012,7 +1118,7 @@ class Os extends MY_Controller
         $dados['servicos'] = $this->os_model->getServicos($idOs);
         $dados['emitente'] = $this->mapos_model->getEmitente();
         $emitente = $dados['emitente'];
-        if (!isset($emitente->email)) {
+        if (! isset($emitente->email)) {
             return false;
         }
 
@@ -1047,7 +1153,7 @@ class Os extends MY_Controller
             echo json_encode(validation_errors());
         } else {
             $data = [
-                'anotacao' => $this->input->post('anotacao'),
+                'anotacao' => '[' . $this->session->userdata('nome_admin') . '] ' . $this->input->post('anotacao'),
                 'data_hora' => date('Y-m-d H:i:s'),
                 'os_id' => $this->input->post('os_id'),
             ];
